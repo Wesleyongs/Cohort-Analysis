@@ -13,6 +13,8 @@ from plotly.graph_objs import *
 import plotly.graph_objs as go
 import plotly
 import plotly.express as px
+import xlsxwriter
+
 
 st.write("""
 # Skin Inc Corhort Analysis
@@ -124,6 +126,9 @@ def show_cohort_analysis(df, region):
     st.write("""
     ## Cumulative Retention Curve (excluding period 1)
     """)
+    
+    st.dataframe(weighted_avg)
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x = weighted_avg.iloc[1:]['CohortPeriod'],
@@ -141,27 +146,43 @@ def show_cohort_analysis(df, region):
         )
     )
     st.plotly_chart(fig)
+    
+    ########################
+    ##  Export            ##
+    ########################
+    
+    # Create a Pandas Excel writer using XlsxWriter as the engine.
+    writer = pd.ExcelWriter(region+'2.0.xlsx', engine='xlsxwriter')
+
+    # Write each dataframe to a different worksheet.
+    weighted_avg.to_excel(writer,sheet_name='Cumulative')
+    user_retention.to_excel(writer,sheet_name='Cohort')
+
+
+    # Close the Pandas Excel writer and output the Excel file.
+    writer.save()
 
 show_cohort_analysis(df,'SG')
 show_cohort_analysis(df_us_transformed,'US')
 show_cohort_analysis(df_shop_transformed,'ROW')
 
 
-# Sidebar Column
-st.sidebar.title('Sidebar Widgets')
-#radio button 
-rating = st.sidebar.radio('Are You Happy with the Example',('Yes','No','Not Sure'))
-if rating == 'Yes':
-    st.sidebar.success('Thank You for Selecting Yes')
-elif rating =='No':
-    st.sidebar.info('Thank You for Selecting No')
-elif rating =='Not Sure':
-    st.sidebar.info('Thank You for Selecting Not sure')
-#selectbox
-rating = st.sidebar.selectbox("How much would you rate this App? ",
-                     ['5 Stars', '4 Stars', '3 Stars','2 Stars','1 Star'])
-st.sidebar.success(rating)
-st.sidebar.write('Find Square of a Number')
-#slider
-get_number = st.sidebar.slider("Select a Number", 1, 10)
-st.sidebar.write('Square of Number',get_number, 'is', get_number*get_number)
+
+# # Sidebar Column
+# st.sidebar.title('Sidebar Widgets')
+# #radio button 
+# rating = st.sidebar.radio('Are You Happy with the Example',('Yes','No','Not Sure'))
+# if rating == 'Yes':
+#     st.sidebar.success('Thank You for Selecting Yes')
+# elif rating =='No':
+#     st.sidebar.info('Thank You for Selecting No')
+# elif rating =='Not Sure':
+#     st.sidebar.info('Thank You for Selecting Not sure')
+# #selectbox
+# rating = st.sidebar.selectbox("How much would you rate this App? ",
+#                      ['5 Stars', '4 Stars', '3 Stars','2 Stars','1 Star'])
+# st.sidebar.success(rating)
+# st.sidebar.write('Find Square of a Number')
+# #slider
+# get_number = st.sidebar.slider("Select a Number", 1, 10)
+# st.sidebar.write('Square of Number',get_number, 'is', get_number*get_number)
