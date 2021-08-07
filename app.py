@@ -14,43 +14,86 @@ import plotly.graph_objs as go
 import plotly
 import plotly.express as px
 import xlsxwriter
+import base64
+from io import BytesIO
+import os
 
-
+###########
+# heading #
+###########
+st.set_page_config(layout="wide")
 st.write("""
 # Skin Inc Corhort Analysis
 This app tracks **cohort analysis** from 2020 - Jul 2021!
 Created by [Wesley Ong](https://Wesleyongs).
 """)
 
-df_shop = pd.read_csv('Shopify orders us 2020-July 2021.csv',
+################
+# Upload Files #
+################
+
+# SG
+uploaded_file = st.file_uploader('Upload SG file', type="csv")
+if uploaded_file is not None:
+    df_shop = pd.read_csv(uploaded_file,
                    parse_dates=['month'])
+else:    
+    df_shop = pd.read_csv('Shopify orders online and pos 2020-July 2021.csv',
+                    parse_dates=['month'])
 df_shop_transformed = df_shop[['month','order_id','customer_email']]
 df_shop_transformed.columns = ['month','order_id','customer_id']
-df_us_transformed=df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
+df_sg_transformed = df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
 
-df_shop = pd.read_csv('Shopify orders row 2020-July 2021.csv',
+# ROW
+uploaded_file = st.file_uploader('Upload ROW file', type="csv")
+if uploaded_file is not None:
+    df_shop = pd.read_csv(uploaded_file,
+                   parse_dates=['month'])
+else:
+    df_shop = pd.read_csv('Shopify orders row 2020-July 2021.csv',
                    parse_dates=['month'])
 df_shop_transformed = df_shop[['month','order_id','customer_email']]
 df_shop_transformed.columns = ['month','order_id','customer_id']
 df_row_transformed=df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
 
-df_shop = pd.read_csv('Shopify orders online and pos 2020-July 2021.csv',
+# US
+uploaded_file = st.file_uploader('Upload US file', type="csv")
+if uploaded_file is not None:
+    df_shop = pd.read_csv(uploaded_file,
+                   parse_dates=['month'])
+else:
+    df_shop = pd.read_csv('Shopify orders online and pos 2020-July 2021.csv',
                    parse_dates=['month'])
 df_shop_transformed = df_shop[['month','order_id','customer_email']]
 df_shop_transformed.columns = ['month','order_id','customer_id']
-df_shop_transformed=df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
+df_us_transformed=df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
 
+# SF
 df_sf = pd.read_csv('SF Orders from 2019-2020.csv', encoding='latin-1', parse_dates=['Transaction Date'])
 df_sf_transformed = df_sf[['Transaction Date','Transaction No','Person Account: Email']]
 df_sf_transformed.columns = ['month','order_id','customer_id']
 df_sf_transformed=df_sf_transformed[df_sf_transformed['month']>='2020-01-01']
 
-df=pd.concat([df_shop_transformed,df_sf_transformed])
+#Concat
+df=pd.concat([df_sg_transformed,df_sf_transformed])
 
-def show_cohort_analysis(df, region):        
+# Download table 
+def get_table_download_link(df):
+    """Generates a link allowing the data in a given panda dataframe to be downloaded
+    in:  dataframe
+    out: href string
+    """
+    csv = df.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+    href = f'<a href="data:file/csv;base64,{b64}">Download csv file</a>'
+
+def show_cohort_analysis(df, region):    
+    
+    st.title("Data for " + region,"linkto_SG")
+    col1,col2 = st.beta_columns((1,1))
 
     ########################
-    ## Data Wraggling     ##
+    ##   Data Wraggling   ##
     ########################
 
     df['OrderPeriod'] = df.month.apply(lambda x: x.strftime('%Y-%m'))
@@ -78,25 +121,32 @@ def show_cohort_analysis(df, region):
     st.write("""
     ## Heat Map overview
     """)
+    
     sns.set(style='white')
     fig3 = plt.figure(figsize=(18, 12))
     sns.heatmap(user_retention.T, mask=user_retention.T.isnull(), annot=True, fmt='.0%')
-    st.pyplot(fig3)
+    col1.pyplot(fig3,use_column_width=True)
+    
+    heat_map_values = cohorts['TotalUsers'].unstack(0)
+    fig4 = plt.figure(figsize=(18, 12))
+    sns.heatmap(heat_map_values.T, mask=heat_map_values.T.isnull(), annot=True, fmt='.20g')
+    col2.pyplot(fig4,use_column_width=True)
+    
+    # st.dataframe(heat_map_values.T)
 
     ########################
     ## Corhort Line Graph ##
     ########################
 
-    st.write("""
+    col1.write("""
     ## View line graph for individual cohorts
     """)
-    selection = st.selectbox('Choose '+region+' Corhorts',user_retention.columns)
-    st.line_chart(user_retention[selection])
+    selection = col1.selectbox('Choose '+region+' Corhorts',user_retention.columns)
+    col1.line_chart(user_retention[selection])
 
     ########################
     ##   Retention Data   ##
     ########################
-
 
     unstacked = cohorts['TotalUsers'].unstack(0)
     unstacked.reset_index()
@@ -126,9 +176,7 @@ def show_cohort_analysis(df, region):
     st.write("""
     ## Cumulative Retention Curve (excluding period 1)
     """)
-    
-    st.dataframe(weighted_avg)
-    
+   
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x = weighted_avg.iloc[1:]['CohortPeriod'],
@@ -145,7 +193,19 @@ def show_cohort_analysis(df, region):
             size=18,
         )
     )
-    st.plotly_chart(fig)
+    col2.plotly_chart(fig)
+    
+     #############
+    # DL LINK ###
+    #############
+    
+    download=st.button('Download '+region+' cumulative Excel File')
+    if download:
+        'Download Started!'
+        csv = weighted_avg.to_csv(index=False)
+        b64 = base64.b64encode(csv.encode()).decode()  # some strings
+        linko= f'<a href="data:file/csv;base64,{b64}" download="myfilename.csv">Download csv file</a>'
+        st.markdown(linko, unsafe_allow_html=True)
     
     ########################
     ##  Export            ##
@@ -157,7 +217,7 @@ def show_cohort_analysis(df, region):
     # Write each dataframe to a different worksheet.
     weighted_avg.to_excel(writer,sheet_name='Cumulative')
     user_retention.to_excel(writer,sheet_name='Cohort')
-
+    heat_map_values.T.to_excel(writer,sheet_name="Cohort Values")
 
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
@@ -165,8 +225,6 @@ def show_cohort_analysis(df, region):
 show_cohort_analysis(df,'SG')
 show_cohort_analysis(df_us_transformed,'US')
 show_cohort_analysis(df_shop_transformed,'ROW')
-
-
 
 # # Sidebar Column
 # st.sidebar.title('Sidebar Widgets')
