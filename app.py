@@ -118,9 +118,12 @@ def show_cohort_analysis(df, region):
     ##      Heat Map      ##
     ########################
 
-    st.write("""
-    ## Heat Map overview
-    """)
+    # st.write("""
+    # ## Heat Map overview
+    # """)
+    # st.write("""
+    # ## Heat Map Cu
+    # """)
     
     sns.set(style='white')
     fig3 = plt.figure(figsize=(18, 12))
@@ -173,7 +176,7 @@ def show_cohort_analysis(df, region):
     ##  Cumulative Curve  ##
     ########################
 
-    st.write("""
+    col2.write("""
     ## Cumulative Retention Curve (excluding period 1)
     """)
    
@@ -201,7 +204,7 @@ def show_cohort_analysis(df, region):
     
     download=st.button('Download '+region+' cumulative Excel File')
     if download:
-        'Download Started!'
+        'Download Started! Please wait a link will appear below for your to download the file'
         csv = weighted_avg.to_csv(index=False)
         b64 = base64.b64encode(csv.encode()).decode()  # some strings
         linko= f'<a href="data:file/csv;base64,{b64}" download="myfilename.csv">Download csv file</a>'
