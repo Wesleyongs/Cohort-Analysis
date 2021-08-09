@@ -34,6 +34,8 @@ Created by [Wesley Ong](https://Wesleyongs).
 
 # SG
 uploaded_file = st.file_uploader('Upload SG file', type="csv")
+agree = st.checkbox("Add SF data from 2019-2020")
+    
 if uploaded_file is not None:
     df_shop = pd.read_csv(uploaded_file,
                    parse_dates=['month'])
@@ -74,8 +76,11 @@ df_sf_transformed = df_sf[['Transaction Date','Transaction No','Person Account: 
 df_sf_transformed.columns = ['month','order_id','customer_id']
 df_sf_transformed=df_sf_transformed[df_sf_transformed['month']>='2020-01-01']
 
-#Concat
-df=pd.concat([df_sg_transformed,df_sf_transformed])
+# Concat
+if agree:
+    df=pd.concat([df_sg_transformed,df_sf_transformed])
+else:
+    df=df_sg_transformed
 
 # Download table 
 def get_table_download_link(df):
@@ -215,7 +220,7 @@ def show_cohort_analysis(df, region):
     ########################
     
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    writer = pd.ExcelWriter(region+'2.0.xlsx', engine='xlsxwriter')
+    writer = pd.ExcelWriter(region+' Exported File.xlsx', engine='xlsxwriter')
 
     # Write each dataframe to a different worksheet.
     weighted_avg.to_excel(writer,sheet_name='Cumulative')
