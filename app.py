@@ -23,9 +23,14 @@ import os
 ###########
 st.set_page_config(layout="wide")
 st.write("""
-# Skin Inc Corhort Analysis
-This app tracks **cohort analysis** from 2020 - Jul 2021!
-Created by [Wesley Ong](https://Wesleyongs).
+# Online Corhort Analysis Generator
+This app tracks **cohort analysis** for any given period - This a popular analysis many e-commerce company use to track customer retention rates  
+Ensure input **csv** has the following columns  
+> 1. month  
+> 2. order_id  
+> 3. customer_id      
+
+Created by [Wesley Ong](https://wesleyongs.com/).
 """)
 
 ################
@@ -33,54 +38,16 @@ Created by [Wesley Ong](https://Wesleyongs).
 ################
 
 # SG
-uploaded_file = st.file_uploader('Upload SG file', type="csv")
-agree = st.checkbox("Add SF data from 2019-2020")
+uploaded_file = st.file_uploader('Upload CSV file', type="csv")
     
 if uploaded_file is not None:
-    df_shop = pd.read_csv(uploaded_file,
+    df = pd.read_csv(uploaded_file,
                    parse_dates=['month'])
+    title = "Your"
 else:    
-    df_shop = pd.read_csv('Shopify orders online and pos 2020-July 2021.csv',
+    df = pd.read_csv('dummy_data.csv',
                     parse_dates=['month'])
-df_shop_transformed = df_shop[['month','order_id','customer_email']]
-df_shop_transformed.columns = ['month','order_id','customer_id']
-df_sg_transformed = df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
-
-# ROW
-uploaded_file = st.file_uploader('Upload ROW file', type="csv")
-if uploaded_file is not None:
-    df_shop = pd.read_csv(uploaded_file,
-                   parse_dates=['month'])
-else:
-    df_shop = pd.read_csv('Shopify orders row 2020-July 2021.csv',
-                   parse_dates=['month'])
-df_shop_transformed = df_shop[['month','order_id','customer_email']]
-df_shop_transformed.columns = ['month','order_id','customer_id']
-df_row_transformed=df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
-
-# US
-uploaded_file = st.file_uploader('Upload US file', type="csv")
-if uploaded_file is not None:
-    df_shop = pd.read_csv(uploaded_file,
-                   parse_dates=['month'])
-else:
-    df_shop = pd.read_csv('Shopify orders online and pos 2020-July 2021.csv',
-                   parse_dates=['month'])
-df_shop_transformed = df_shop[['month','order_id','customer_email']]
-df_shop_transformed.columns = ['month','order_id','customer_id']
-df_us_transformed=df_shop_transformed[df_shop_transformed['month']>='2020-01-01']
-
-# SF
-df_sf = pd.read_csv('SF Orders from 2019-2020.csv', encoding='latin-1', parse_dates=['Transaction Date'])
-df_sf_transformed = df_sf[['Transaction Date','Transaction No','Person Account: Email']]
-df_sf_transformed.columns = ['month','order_id','customer_id']
-df_sf_transformed=df_sf_transformed[df_sf_transformed['month']>='2020-01-01']
-
-# Concat
-if agree:
-    df=pd.concat([df_sg_transformed,df_sf_transformed])
-else:
-    df=df_sg_transformed
+    title = "Dummy"
 
 # Download table 
 def get_table_download_link(df):
@@ -94,7 +61,7 @@ def get_table_download_link(df):
 
 def show_cohort_analysis(df, region):    
     
-    st.title("Data for " + region,"linkto_SG")
+    st.title(title+" Results")
     col1,col2 = st.beta_columns((1,1))
 
     ########################
@@ -220,7 +187,7 @@ def show_cohort_analysis(df, region):
     ########################
     
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    writer = pd.ExcelWriter(region+' Exported File.xlsx', engine='xlsxwriter')
+    writer = pd.ExcelWriter('Exported File.xlsx', engine='xlsxwriter')
 
     # Write each dataframe to a different worksheet.
     weighted_avg.to_excel(writer,sheet_name='Cumulative')
@@ -230,25 +197,4 @@ def show_cohort_analysis(df, region):
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
 
-show_cohort_analysis(df,'SG')
-show_cohort_analysis(df_us_transformed,'US')
-show_cohort_analysis(df_shop_transformed,'ROW')
-
-# # Sidebar Column
-# st.sidebar.title('Sidebar Widgets')
-# #radio button 
-# rating = st.sidebar.radio('Are You Happy with the Example',('Yes','No','Not Sure'))
-# if rating == 'Yes':
-#     st.sidebar.success('Thank You for Selecting Yes')
-# elif rating =='No':
-#     st.sidebar.info('Thank You for Selecting No')
-# elif rating =='Not Sure':
-#     st.sidebar.info('Thank You for Selecting Not sure')
-# #selectbox
-# rating = st.sidebar.selectbox("How much would you rate this App? ",
-#                      ['5 Stars', '4 Stars', '3 Stars','2 Stars','1 Star'])
-# st.sidebar.success(rating)
-# st.sidebar.write('Find Square of a Number')
-# #slider
-# get_number = st.sidebar.slider("Select a Number", 1, 10)
-# st.sidebar.write('Square of Number',get_number, 'is', get_number*get_number)
+show_cohort_analysis(df,title)
